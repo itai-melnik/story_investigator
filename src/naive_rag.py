@@ -1,41 +1,73 @@
-"""Custom manual RAG implementation."""
+from typing import List
+import numpy as np
+from sentence_transformers import SentenceTransformer
+from src.llm_client import SafeLLMClient, PromptTooLongError
+from src.utils import parse_story_xml
 
-from .interfaces import RagStrategy
-
-
-class NaiveRAG(RagStrategy):
-    """A simple, manual RAG implementation."""
-    
-    def __init__(self, documents: list[str] = None):
-        """Initialize NaiveRAG with documents.
+class NaiveRagStrategy:
+    def __init__(self, story_file_path: str, llm_client: SafeLLMClient):
+        print("Loading Embedding Model (this may take a moment)...")
+        self.embedder = SentenceTransformer('all-MiniLM-L6-v2')
         
-        Args:
-            documents: List of document strings to search through.
+        print(f"Parsing story from {story_file_path}...")
+        self.chunks = parse_story_xml(story_file_path)
+        
+        # Pre-calculate embeddings for all chunks (messages)
+        print("Embedding story chunks...")
+        self.chunk_texts = [chunk['full_text'] for chunk in self.chunks]
+        self.chunk_embeddings = self.embedder.encode(self.chunk_texts)
+        
+        self.llm_client = llm_client
+
+    def ask(self, question: str) -> str:
         """
-        self.documents = documents or []
-    
-    def retrieve(self, query: str) -> str:
-        """Retrieve relevant context for the given query.
+        Main entry point: 
+        1. Retrieve relevant chunks.
+        2. Construct context respecting the 3000 char limit.
+        3. Query LLM.
+        """
+        # 1. Embed the Question
+        question_embedding = self.embedder.encode(question)
         
-        Args:
-            query: The query string to retrieve context for.
+        # 2. Calculate Cosine Similarity
+        scores = np.dot(self.chunk_embeddings, question_embedding)
+        
+        # 3. Sort chunks by highest score
+        top_k_indices = np.argsort(scores)[::-1]
+        
+        # 4. Construct Context respecting the 3000 char limit
+        relevant_context = self._build_safe_context(top_k_indices, question)
+        
+        # 5. Call LLM
+        try:
+            return self.llm_client.generate_answer(relevant_context, question)
+        except PromptTooLongError as e:
+            # Fallback mechanism if calculation failed (shouldn't happen with logic below)
+            return f"System Error: Context calculation failed. {str(e)}"
+
+    def _build_safe_context(self, sorted_indices: np.ndarray, question: str) -> str:
+        """
+        Iterates through sorted chunks and adds them to context 
+        UNTIL adding another one would break the SafeLLMClient limit.
+        """
+        # Estimate overhead (System prompt + structure chars in SafeLLMClient)
+        # We must be conservative. Let's assume ~150 chars overhead in llm_client.
+        # Plus the length of the question.
+        system_overhead = 200 
+        current_used_chars = system_overhead + len(question)
+        max_limit = SafeLLMClient.MAX_CHAR_LIMIT
+        
+        selected_chunks = []
+        
+        for idx in sorted_indices:
+            chunk_text = self.chunks[idx]['full_text']
+            chunk_len = len(chunk_text) + 2  # +2 for newlines
             
-        Returns:
-            Retrieved context as a string.
-        """
-        # TODO: Implement naive retrieval logic
-        pass
-    
-    def generate(self, query: str, context: str) -> str:
-        """Generate a response using the query and context.
+            if current_used_chars + chunk_len < max_limit:
+                selected_chunks.append(chunk_text)
+                current_used_chars += chunk_len
+            else:
+                # we can't fit the next best chunk, stop.
+                break
         
-        Args:
-            query: The query string.
-            context: The retrieved context.
-            
-        Returns:
-            Generated response as a string.
-        """
-        # TODO: Implement generation logic
-        pass
-
+        return "\n\n".join(selected_chunks)
