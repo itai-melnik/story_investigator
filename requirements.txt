@@ -2,3 +2,4 @@ sentence-transformers
 numpy
 pytest
 python-dotenv
+openai
