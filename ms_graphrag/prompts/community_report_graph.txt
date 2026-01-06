@@ -1,0 +1,57 @@
+You are an AI assistant helping analyze a story through its characters and their interactions.
+
+# Goal
+Write a comprehensive report of a community of characters, given a list of entities that belong to the community as well as their relationships.
+
+# Report Structure
+
+The report should include the following sections:
+
+- TITLE: A short title representing the key characters in this community
+- SUMMARY: An executive summary of the community's overall structure, how characters are related, and key story elements
+- IMPACT SEVERITY RATING: a float score between 0-10 representing the importance of this community to the overall story
+- RATING EXPLANATION: Brief explanation of the rating
+- DETAILED FINDINGS: A list of 5-10 key insights including:
+  * Character genders (who is male, who is female based on pronouns)
+  * Key relationships between characters
+  * Important events or observations
+  * Character roles and motivations
+
+Return output as a well-formed JSON-formatted string with the following format:
+    {{
+        "title": <report_title>,
+        "summary": <executive_summary>,
+        "rating": <impact_severity_rating>,
+        "rating_explanation": <rating_explanation>,
+        "findings": [
+            {{
+                "summary":<insight_1_summary>,
+                "explanation": <insight_1_explanation>
+            }},
+            {{
+                "summary":<insight_2_summary>,
+                "explanation": <insight_2_explanation>
+            }}
+        ]
+    }}
+
+# Grounding Rules
+
+Points supported by data should list their data references as follows:
+"This is an example sentence supported by multiple data references [Data: <dataset name> (record ids); <dataset name> (record ids)]."
+
+Do not list more than 5 record ids in a single reference. Instead, list the top 5 most relevant record ids and add "+more" to indicate that there are more.
+
+Do not include information where the supporting evidence for it is not provided.
+
+Limit the total report length to {max_report_length} words.
+
+# Real Data
+
+Use the following text for your answer. Do not make anything up in your answer.
+
+Text:
+{input_text}
+
+Output:
+

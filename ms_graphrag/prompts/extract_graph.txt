@@ -1,0 +1,61 @@
+-Goal-
+Given a text document containing messages between characters in a story, identify all entities and relationships among them.
+
+-Steps-
+1. Identify all entities. For each identified entity, extract the following information:
+- entity_name: Name of the entity, capitalized
+- entity_type: One of the following types: [{entity_types}]
+- entity_description: Comprehensive description including:
+  * For PERSON: gender (male/female based on pronouns he/she/him/her), role in the story, personality traits, relationships with others
+  * For LOCATION: where it is, significance to the story
+  * For EVENT: when it happened, who was involved, what occurred
+  * For OBJECT: what it is, who owns/uses it, significance
+Format each entity as ("entity"{tuple_delimiter}<entity_name>{tuple_delimiter}<entity_type>{tuple_delimiter}<entity_description>)
+
+2. From the entities identified in step 1, identify all pairs of (source_entity, target_entity) that are *clearly related* to each other.
+For each pair of related entities, extract the following information:
+- source_entity: name of the source entity, as identified in step 1
+- target_entity: name of the target entity, as identified in step 1
+- relationship_description: explanation of how and why they are related, including emotional tone, actions taken
+- relationship_strength: a numeric score (1-10) indicating strength of the relationship
+Format each relationship as ("relationship"{tuple_delimiter}<source_entity>{tuple_delimiter}<target_entity>{tuple_delimiter}<relationship_description>{tuple_delimiter}<relationship_strength>)
+
+3. Return output in English as a single list of all the entities and relationships identified in steps 1 and 2. Use **{record_delimiter}** as the list delimiter.
+
+4. When finished, output {completion_delimiter}
+
+######################
+-Examples-
+######################
+Example 1:
+Entity_types: PERSON,LOCATION,EVENT,OBJECT
+Text:
+Zoe sent a message to Six: "I saw Marcus at the cafe. He looked worried about something."
+Six replied: "She's always so observant. Did he mention the meeting?"
+######################
+Output:
+("entity"{tuple_delimiter}ZOE{tuple_delimiter}PERSON{tuple_delimiter}Zoe is a female character (referred to as "she") who is observant and communicates with Six)
+{record_delimiter}
+("entity"{tuple_delimiter}SIX{tuple_delimiter}PERSON{tuple_delimiter}Six is a character who receives messages from Zoe and asks follow-up questions)
+{record_delimiter}
+("entity"{tuple_delimiter}MARCUS{tuple_delimiter}PERSON{tuple_delimiter}Marcus is a male character (referred to as "he") who appeared worried at the cafe)
+{record_delimiter}
+("entity"{tuple_delimiter}CAFE{tuple_delimiter}LOCATION{tuple_delimiter}A cafe where Zoe saw Marcus)
+{record_delimiter}
+("entity"{tuple_delimiter}THE MEETING{tuple_delimiter}EVENT{tuple_delimiter}A meeting that Six asked about, possibly related to Marcus's worried appearance)
+{record_delimiter}
+("relationship"{tuple_delimiter}ZOE{tuple_delimiter}SIX{tuple_delimiter}Zoe sends messages to Six, sharing observations. Six values Zoe's observational skills{tuple_delimiter}8)
+{record_delimiter}
+("relationship"{tuple_delimiter}ZOE{tuple_delimiter}MARCUS{tuple_delimiter}Zoe observed Marcus at the cafe and noticed his emotional state{tuple_delimiter}4)
+{record_delimiter}
+("relationship"{tuple_delimiter}MARCUS{tuple_delimiter}THE MEETING{tuple_delimiter}Marcus may be connected to or worried about the meeting{tuple_delimiter}5)
+{completion_delimiter}
+
+######################
+-Real Data-
+######################
+Entity_types: {entity_types}
+Text: {input_text}
+######################
+Output:
+

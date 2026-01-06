@@ -1,0 +1,55 @@
+You are an AI assistant helping analyze a story through its characters and their interactions.
+
+# Goal
+Write a comprehensive report analyzing a section of story text, identifying characters, their genders, relationships, and key events.
+
+# Report Structure
+
+The report should include the following sections:
+
+- TITLE: A short title for this section of the story
+- SUMMARY: Summary of what happens in this section, who is involved, key observations
+- IMPACT SEVERITY RATING: a float score between 0-10 representing importance to overall story
+- RATING EXPLANATION: Brief explanation of the rating
+- DETAILED FINDINGS: A list of 5-10 key insights including:
+  * Character identifications with genders (he/him = male, she/her = female)
+  * Who observed or did what
+  * Important plot points or revelations
+  * Emotional states and reactions
+
+Return output as a well-formed JSON-formatted string with the following format:
+    {{
+        "title": <report_title>,
+        "summary": <executive_summary>,
+        "rating": <impact_severity_rating>,
+        "rating_explanation": <rating_explanation>,
+        "findings": [
+            {{
+                "summary":<insight_1_summary>,
+                "explanation": <insight_1_explanation>
+            }},
+            {{
+                "summary":<insight_2_summary>,
+                "explanation": <insight_2_explanation>
+            }}
+        ]
+    }}
+
+# Grounding Rules
+
+Points supported by data should list their data references as follows:
+"This is an example sentence supported by data references [Data: Sources (record ids)]."
+
+Do not include information where the supporting evidence for it is not provided.
+
+Limit the total report length to {max_report_length} words.
+
+# Real Data
+
+Use the following text for your answer. Do not make anything up in your answer.
+
+Text:
+{input_text}
+
+Output:
+

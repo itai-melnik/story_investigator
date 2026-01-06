@@ -133,15 +133,16 @@ class MicrosoftGraphRagStrategy:
                 "temperature": 0.0,
             },
             context_builder_params={
-                "text_unit_prop": 0.6,  
-                "community_prop": 0.1,
+                "text_unit_prop": 0.6,       
+                "community_prop": 0.1,      
                 "conversation_history_max_turns": 5,
                 "conversation_history_user_turns_only": True,
-                "top_k_mapped_entities": 10,
-                "top_k_relationships": 10,
+                "top_k_mapped_entities": 15,  
+                "top_k_relationships": 15,    
                 "include_entity_rank": True,
+                "max_tokens": 8000,           
             },
-            response_type="multiple paragraphs", 
+            response_type="concise answer",   
         )
 
     def ask(self, question: str) -> str:
