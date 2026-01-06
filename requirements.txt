@@ -3,3 +3,5 @@ numpy
 pytest
 python-dotenv
 openai
+neo4j-graphrag
+neo4j

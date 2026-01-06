@@ -21,8 +21,8 @@ class SafeLLMClient:
         system_instruction = (
             "You are AI Investigator 1.0. Answer the question based ONLY on the story chunks provided.\n"
             "You must strictly follow this format:\n"
-            "[Answer]. Here are some of the lines that show it:\n"
-            "[Exact quote from the text]\n\n"
+            "[Answer]. Here is why:\n"
+            "[Exact quote from the text or reasoning why]\n\n"
             "If answer is not in the text or you cannot find a conclusive answer, state that you don't know and explain why."
         )
 
