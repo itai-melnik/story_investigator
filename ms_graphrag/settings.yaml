@@ -1,0 +1,33 @@
+encoding_model: cl100k_base
+skip_workflows: []
+
+
+models:
+  default_chat_model:
+    api_key: ${OPENAI_API_KEY}
+    type: openai_chat
+    model: gpt-4o-mini
+    model_supports_json: true
+    max_tokens: 4000
+    request_timeout: 180.0
+    concurrent_requests: 5
+
+  default_embedding_model:
+    api_key: ${OPENAI_API_KEY}
+    type: openai_embedding
+    model: text-embedding-3-small
+
+
+llm:
+  api_key: ${OPENAI_API_KEY}
+  type: openai_chat
+  model: gpt-4o-mini
+  model_supports_json: true
+  
+embeddings:
+  async_mode: threaded 
+  llm:
+    api_key: ${OPENAI_API_KEY}
+    type: openai_embedding
+    model: text-embedding-3-small
+    
