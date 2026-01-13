@@ -1,7 +1,7 @@
 from typing import List
 import numpy as np
 from sentence_transformers import SentenceTransformer
-from src.llm_client import SafeLLMClient, PromptTooLongError
+from src.llm_client import SafeLLMClient
 from src.utils import parse_story_xml
 
 class NaiveRagStrategy:
@@ -23,7 +23,7 @@ class NaiveRagStrategy:
         """
         Main entry point: 
         1. Retrieve relevant chunks.
-        2. Construct context respecting the 3000 char limit.
+        2. Construct context respecting the character limit.
         3. Query LLM.
         """
         # 1. Embed the Question
@@ -38,12 +38,8 @@ class NaiveRagStrategy:
         # 4. Construct Context respecting the 3000 char limit
         relevant_context = self._build_safe_context(top_k_indices, question)
         
-        # 5. Call LLM
-        try:
-            return self.llm_client.generate_answer(relevant_context, question)
-        except PromptTooLongError as e:
-            # Fallback mechanism if calculation failed (shouldn't happen with logic below)
-            return f"System Error: Context calculation failed. {str(e)}"
+        # 5. Call LLM (context is auto-truncated if needed)
+        return self.llm_client.generate_answer(relevant_context, question)
 
     def _build_safe_context(self, sorted_indices: np.ndarray, question: str) -> str:
         """
@@ -51,9 +47,9 @@ class NaiveRagStrategy:
         UNTIL adding another one would break the SafeLLMClient limit.
         """
         # Estimate overhead (System prompt + structure chars in SafeLLMClient)
-        # We must be conservative. Let's assume ~150 chars overhead in llm_client.
-        # Plus the length of the question.
-        system_overhead = 200 
+        # System instruction (~200 chars) + "Context:\n" + "\n\nQuestion: " (~20 chars)
+        # We must be conservative to account for the actual prompt structure.
+        system_overhead = 250 
         current_used_chars = system_overhead + len(question)
         max_limit = SafeLLMClient.MAX_CHAR_LIMIT
         

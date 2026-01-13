@@ -1,7 +1,7 @@
 import time
 from neo4j import GraphDatabase
 from neo4j_graphrag.embeddings import SentenceTransformerEmbeddings
-from src.llm_client import SafeLLMClient, PromptTooLongError
+from src.llm_client import SafeLLMClient
 from src.utils import parse_story_xml
 
 class Neo4jRagStrategy:
@@ -111,10 +111,5 @@ class Neo4jRagStrategy:
 
         full_context = "\n\n".join(formatted_chunks)
         
-        if len(full_context) > 2500:
-            full_context = full_context[:2500] + "...(truncated)"
-
-        try:
-            return self.llm_client.generate_answer(full_context, question)
-        except PromptTooLongError:
-            return "System Error: Retrieved context was too long."
+        # Context is auto-truncated by llm_client if needed
+        return self.llm_client.generate_answer(full_context, question)

@@ -1,11 +1,8 @@
 from openai import OpenAI
 
-class PromptTooLongError(Exception):
-    """Custom exception raised when the LLM prompt exceeds the safe limit."""
-    pass
 
 class SafeLLMClient:
-    """Client for making safe LLM API calls with prompt limit enforcement (3000 tokens)."""
+    """Client for making safe LLM API calls with automatic context truncation (3000 char limit)."""
     MAX_CHAR_LIMIT = 3000
 
     def __init__(self, api_key=None):
@@ -14,7 +11,8 @@ class SafeLLMClient:
 
     def generate_answer(self, context: str, question: str) -> str:
         """
-        Constructs the prompt, checks the length constraint, and calls OpenAI.
+        Constructs the prompt and calls OpenAI. 
+        Automatically truncates context if it exceeds the character limit.
         """
         
         # 1. Define the System Persona
@@ -22,20 +20,22 @@ class SafeLLMClient:
             "You are AI Investigator 1.0. Answer the question based ONLY on the story chunks provided.\n"
             "You must strictly follow this format:\n"
             "[Answer]. Here is why:\n"
-            "[Exact quote from the text or reasoning why]\n\n"
+            "[Exact quote from the text or reasoning why]\n"
             "If answer is not in the text or you cannot find a conclusive answer, state that you don't know and explain why."
         )
 
-        # 2. Define the User Query
-        user_content = f"Context:\n{context}\n\nQuestion: {question}"
-
-        # We count both system and user prompts towards the limit to be safe.
-        total_length = len(system_instruction) + len(user_content)
+        # 2. Calculate available space for context
+        # Overhead: system_instruction  + "Context:\n" + "\n\nQuestion: "  + question
+        overhead = len(system_instruction) + len("Context:\n") + len("\n\nQuestion: ") + len(question)
+        max_context_length = self.MAX_CHAR_LIMIT - overhead
         
-        if total_length > self.MAX_CHAR_LIMIT:
-            raise PromptTooLongError(
-                f"Total prompt length ({total_length}) exceeds limit of {self.MAX_CHAR_LIMIT} characters."
-            )
+        # 3. Truncate context if needed
+        if len(context) > max_context_length:
+            # Leave room for "..." indicator
+            context = context[:max_context_length - 3] + "..."
+        
+        # 4. Build user content
+        user_content = f"Context:\n{context}\n\nQuestion: {question}"
 
         # 4. Call OpenAI API
         return self._call_llm_api(system_instruction, user_content)
