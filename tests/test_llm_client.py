@@ -2,7 +2,7 @@ import pytest
 import sys
 import os
 from unittest.mock import patch, MagicMock
-from src.llm_client import SafeLLMClient, PromptTooLongError
+from src.llm_client import SafeLLMClient
 
 @pytest.fixture
 def client():
@@ -43,17 +43,33 @@ def test_prompt_under_limit_success(mock_openai_class):
     # Verify we actually called the API (conceptually)
     mock_instance.chat.completions.create.assert_called_once()
 
-def test_prompt_exceeds_limit_raises_error(client):
+@patch("src.llm_client.OpenAI")
+def test_long_context_is_truncated(mock_openai_class):
     """
-    Test that a prompt over 3000 chars raises PromptTooLongError.
-    This logic happens BEFORE the API call, so we don't strictly need to mock the API here,
-    but it's safe to rely on the client fixture.
+    Test that a long context is automatically truncated to fit within the limit.
+    The method should NOT raise an error, but truncate and call the API.
     """
-    # 2500 chars context + 501 chars question = 3001 chars (over limit)
-    long_context = "a" * 2500
-    long_question = "b" * 501
+    # Setup the Mock Response
+    mock_response = MagicMock()
+    mock_response.choices[0].message.content = "Mocked Answer"
+    mock_instance = mock_openai_class.return_value
+    mock_instance.chat.completions.create.return_value = mock_response
+
+    with patch.dict(os.environ, {"OPENAI_API_KEY": "fake-test-key"}):
+        client = SafeLLMClient()
+
+    # Very long context that exceeds the limit
+    long_context = "a" * 5000
+    question = "Short question?"
     
-    with pytest.raises(PromptTooLongError) as excinfo:
-        client.generate_answer(long_context, long_question)
+    # Should NOT raise an error - context gets truncated
+    result = client.generate_answer(long_context, question)
     
-    assert "exceeds limit" in str(excinfo.value)
+    # Verify the API was still called
+    assert result == "Mocked Answer"
+    mock_instance.chat.completions.create.assert_called_once()
+    
+    # Verify the context was truncated (contains "..." before the question)
+    call_args = mock_instance.chat.completions.create.call_args
+    user_message = call_args.kwargs["messages"][1]["content"]
+    assert "...\n\nQuestion:" in user_message

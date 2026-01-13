@@ -24,7 +24,7 @@ def test_ms_graphrag():
         return
 
     # 2. Ask Question
-    question = "Who is a boy and who is a girl?"
+    question = "Who sees a fire boat?"
     print(f"\nQuestion: {question}")
     print("-" * 40)
     print("Thinking (this involves Local Search and LLM generation)...")

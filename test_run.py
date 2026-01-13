@@ -1,8 +1,9 @@
-# test_run.py
+import os
 from src.naive_rag import NaiveRagStrategy
 from src.llm_client import SafeLLMClient
 from dotenv import load_dotenv
-import os
+
+os.environ['TOKENIZERS_PARALLELISM'] = 'false'
 
 load_dotenv()
 
